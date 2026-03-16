@@ -44,7 +44,7 @@ CREATE TABLE OrderDetails (
     FOREIGN KEY (product_id) REFERENCES Products(product_id)
 );
 
--- INSERT STATEMENTS (At least 5 rows per table)
+-- INSERT STATEMENTS (5 rows per table as per assignment)
 
 INSERT INTO SalesReps VALUES 
 ('SR01', 'Deepak Joshi', 'deepak@corp.com', 'Mumbai HQ, Nariman Point, Mumbai - 400021'),
