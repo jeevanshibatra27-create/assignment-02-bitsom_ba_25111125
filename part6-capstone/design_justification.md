@@ -1,17 +1,20 @@
 ## Storage Systems
+For this architecture, three distinct storage systems were selected to optimize for specific data requirements:
 
-For this hospital network AI-powered data system, multiple storage systems have been chosen to meet the specific needs of each goal. The **OLTP database** (e.g., PostgreSQL) handles transactional and operational data such as historical treatment records, clinical notes, and hospital management data (admissions, billing, etc.). This ensures that day-to-day hospital operations are reliably captured in a structured format. The **Time-Series Database** (e.g., InfluxDB) is used specifically for real-time ICU vitals, as it efficiently stores high-frequency time-stamped data from monitoring devices. For analytics and predictive modeling, the **Data Warehouse** (e.g., Snowflake or BigQuery) stores cleaned and structured data, enabling the ML model to predict patient readmission risk and generating monthly reports for management. Lastly, a **Vector Database** (e.g., Pinecone or Milvus) is implemented to store clinical text in a semantic format, enabling natural language queries from doctors and supporting semantic search capabilities.
+Data Lake (Raw Storage): This acts as the landing zone for all high-volume, high-velocity data, especially from ICU Monitoring Devices and Doctor Notes. It is chosen because it can store unstructured and semi-structured data at a low cost, ensuring no data is discarded before it is understood.
 
----
+Data Warehouse (Reporting Data): This system is utilized for Billing & Costs and structured Patient Records. It is optimized for complex SQL queries and historical analysis, serving as the "single source of truth" for the BI Reports used by hospital management.
+
+Vector Database (Semantic Search): Specifically chosen to handle the Doctor Notes and Treatment History. By storing data as high-dimensional vectors, it enables the NLP Search functionality, allowing doctors to query patient history using natural language rather than rigid keyword searches.
 
 ## OLTP vs OLAP Boundary
+The boundary between the Online Transactional Processing (OLTP) and Online Analytical Processing (OLAP) systems occurs at the ETL & Streaming (Kafka) layer.
 
-The design clearly separates transactional (OLTP) and analytical (OLAP) systems. The **OLTP boundary** ends at the operational database layer where patient records, clinical notes, billing data, and ICU monitoring feeds are captured in near real-time. Beyond this, data is transformed, cleaned, and loaded into the **OLAP layer**, which includes the Data Warehouse and Vector Database. Analytical operations, including ML predictions, semantic search queries, and BI report generation, are performed on the OLAP systems. This separation ensures that transactional operations are not impacted by heavy analytical workloads, providing both performance and data reliability.
-
----
+The Data Sources (Patient Records, ICU Devices) represent the OLTP side, where the primary focus is on data entry and real-time clinical operations. Once the data passes through Kafka into the Data Lake and Warehouse, it enters the OLAP environment. Here, the data is no longer being "mutated" by daily hospital operations; instead, it is being transformed and aggregated to support long-term decision-making and predictive modeling (Readmission Prediction).
 
 ## Trade-offs
+A significant trade-off in this design is Architectural Complexity vs. Data Specialization. By using three different storage backends (Lake, Warehouse, and Vector DB), we introduce "polyglot persistence."
 
-One significant trade-off in this design is the complexity introduced by maintaining multiple specialized storage systems. While this allows optimized storage and query performance for different data types (structured, semi-structured, unstructured, and time-series), it increases system maintenance and operational overhead. To mitigate this, automated ETL pipelines and monitoring tools can be implemented to ensure data consistency and smooth integration between OLTP, Data Lake, Data Warehouse, and Vector Database layers. Additionally, using cloud-native managed services for each storage type can reduce administrative overhead and improve scalability without compromising the performance of transactional or analytical workloads.
+The Risk: Maintaining three separate systems increases the overhead for the IT team, creates potential data consistency issues, and increases costs.
 
----
+Mitigation: To mitigate this, I would implement a Unified Metadata Layer (like a Data Catalog). This ensures that a patient ID in the Vector Database matches the same patient in the Data Warehouse. Additionally, using a managed "Data Lakehouse" approach could eventually consolidate the Lake and Warehouse to reduce the number of moving parts without sacrificing the specialized search capabilities of the Vector DB.
